@@ -6,6 +6,8 @@
 
 #include <iostream>
 #include <math.h> // for logarithm / exponential / floor / power
+#include <random> // for random
+#include <time.h> // for time()
 
 using namespace std;
 
@@ -24,4 +26,8 @@ bool log_transform(unsigned char** data, unsigned char** res, int height, int wi
 bool inverse_log_transform(unsigned char** data, unsigned char** res, int height, int width);
 
 bool power_law_transform(unsigned char** data, unsigned char** res, int height, int width, double gamma);
+
+bool add_impulse_noise(unsigned char** data, unsigned char** res, int height, int width, double prob);
+
+bool add_uniform_noise(unsigned char** data, unsigned char** res, int height, int width, double amp);
 

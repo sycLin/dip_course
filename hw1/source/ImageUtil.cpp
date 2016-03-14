@@ -291,4 +291,23 @@ bool power_law_transform(unsigned char** data, unsigned char** res, int height, 
 	return true;
 }
 
+bool add_impulse_noise(unsigned char** data, unsigned char** res, int height, int width, double prob) {
+	random_device rd;
+	mt19937 gen(rd());
+	uniform_real_distribution<> dis(0.0, 1.0);
+	for(int r = 0; r < height; r++) {
+		for(int c = 0; c < width; c++) {
+			double ran = static_cast<double>(dis(gen));
+			if(ran < prob)
+				res[r][c] = 0;
+			else if(ran > (1-prob))
+				res[r][c] = 255;
+			else
+				res[r][c] = data[r][c];
+		}
+	}
+	return true;
+}
+
+bool add_uniform_noise(unsigned char** data, unsigned char** res, int height, int width, double amp);
 

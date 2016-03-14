@@ -31,3 +31,9 @@ bool add_impulse_noise(unsigned char** data, unsigned char** res, int height, in
 
 bool add_uniform_noise(unsigned char** data, unsigned char** res, int height, int width, double amp);
 
+bool median_filter(unsigned char** data, unsigned char** res, int height, int width, int bheight, int bwidth);
+
+bool low_pass_filter(unsigned char** data, unsigned char** res, int height, int width, double b);
+
+double getSNR(unsigned char** im1, unsigned char** im2, int height, int width);
+

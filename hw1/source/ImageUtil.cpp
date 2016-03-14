@@ -309,5 +309,161 @@ bool add_impulse_noise(unsigned char** data, unsigned char** res, int height, in
 	return true;
 }
 
-bool add_uniform_noise(unsigned char** data, unsigned char** res, int height, int width, double amp);
+bool add_uniform_noise(unsigned char** data, unsigned char** res, int height, int width, double amp) {
+	random_device rd;
+	mt19937 gen(rd());
+	normal_distribution<double> dis(0.0, 1.0);
+	// double ran = distribution(generator);
+	for(int r = 0; r < height; r++) {
+		for(int c = 0; c < width; c++) {
+			// get Gaussian random number
+			double ran = static_cast<double>(dis(gen));
+			// get new value
+			ran = (double)data[r][c] + amp * ran;
+			// check in range
+			if(ran >= 255.0)
+				res[r][c] = 255;
+			else if(ran <= 0.0)
+				res[r][c] = 0;
+			else
+				res[r][c] = floor(ran);
+		}
+	}
+	return true;
+}
+
+bool median_filter(unsigned char** data, unsigned char** res, int height, int width, int bheight, int bwidth) {
+	for(int r = 0; r < height; r++) {
+		for(int c = 0; c < width; c++) {
+			// use vector to store neighbors and self
+			vector<int> neighbor_values;
+			// loop over neighbors (nr, nc)
+			for(int nr = r - bheight / 2; nr <= r + bheight / 2; nr++) {
+				for(int nc = c - bwidth / 2; nc <= c + bwidth / 2; nc++) {
+
+					// this _tmp_ stores the value of current neighbor being explored
+					int tmp = 0;
+					
+					// check if neighbor (nr, nc) is in range
+					// if not: we use "extending solution"
+					/*
+						type 1 |   type 2    | type 3
+						-------|-------------|-------
+						       |             |
+						type 4 |    Image    | type 5
+						       |             |
+						-------|-------------|-------
+						type 6 |   type 7    | type 8
+					*/
+					if(nr < 0) {
+						// type 1, 2, 3
+						if(nc < 0) {
+							// type 1
+							tmp = data[0][0];
+						} else if(nc >= width) {
+							// type 3
+							tmp = data[0][width-1];
+						} else {
+							// type 2
+							tmp = data[0][nc];
+						}
+					} else if(nr >= height) {
+						// type 6, 7, 8
+						if(nc < 0) {
+							// type 6
+							tmp = data[height-1][0];
+						} else if(nc >= width) {
+							// type 8
+							tmp = data[height-1][width-1];
+						} else {
+							// type 7
+							tmp = data[height-1][nc];
+						}
+					} else {
+						// type 4, 5
+						if(nc < 0) {
+							// type 4
+							tmp = data[nr][0];
+						} else if(nc >= width) {
+							// type 5
+							tmp = data[nr][width-1];
+						} else {
+							// (in range)
+							tmp = data[nr][nc];
+						}
+					}
+
+					// push into vector
+					neighbor_values.push_back(tmp);
+				}
+			}
+			// a little check
+			if(neighbor_values.size() != (bheight * bwidth)) {
+				cerr << "error occurred when getting neighbor_values..." << endl;
+				return false;
+			}
+			// sort the vector
+			sort(neighbor_values.begin(), neighbor_values.end());
+			res[r][c] = neighbor_values.at(neighbor_values.size() / 2);
+		}
+	}
+	return true;
+}
+
+bool low_pass_filter(unsigned char** data, unsigned char** res, int height, int width, double b) {
+	// we use 3x3 low pass filter here
+	for(int r = 0; r < height; r++) {
+		for(int c = 0; c < width; c++) {
+			// set up some variables
+			int counter = 0;
+			int neighbors[9] = {0};
+			double kernel[9] = {1, b, 1, b, b*b, b, 1, b, 1};
+			// get neighbors
+			for(int nr = r-1; nr <= r+1; nr++) {
+				for(int nc = c-1; nc <= c+1; nc++) {
+					int real_r, real_c;
+					// check row in range
+					if(nr < 0)
+						real_r = 0;
+					else if(nr >= height)
+						real_r = height - 1;
+					else
+						real_r = nr;
+					// check column in range
+					if(nc < 0)
+						real_c = 0;
+					else if(nc >= width)
+						real_c = width - 1;
+					else
+						real_c = nc;
+					// put into _neighbors_ array
+					neighbors[counter++] = data[real_r][real_c];
+				}
+			}
+			// calculate
+			double conv_sum = 0.0;
+			for(int i=0; i<9; i++)
+				conv_sum += ((double)neighbors[i]) * kernel[i];
+			res[r][c] = floor(conv_sum / ((b + 2.0) * (b + 2.0)));
+		}
+	}
+	return true;
+}
+
+double getSNR(unsigned char** im1, unsigned char** im2, int height, int width) {
+	// 1) calculate MSE
+	double MSE = 0.0; // mean squared error
+	for(int r = 0; r < height; r++) {
+		for(int c = 0; c < width; c++) {
+			MSE = MSE + (im1[r][c] - im2[r][c]) * (im1[r][c] - im2[r][c]);
+		}
+	}
+	MSE = MSE / (double)(height * width);
+
+	// 2) form PSNR, i.e., peak signal-to-noise ratio
+	double PSNR = 10.0 * log(255.0 * 255.0 / MSE) / log(10.0);
+	return PSNR;
+}
+
+
 

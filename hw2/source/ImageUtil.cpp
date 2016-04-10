@@ -183,6 +183,49 @@ double getSNR(unsigned char** im1, unsigned char** im2, int height, int width) {
 	return PSNR;
 }
 
+bool doSobelEdgeDetector(unsigned char** im, unsigned char** edge_im, int height, int width, double threshold) {
+	// prepare sobel kernels
+	int sobel_mask_row[9] = {
+		-1, 0, 1,
+		-2, 0, 2,
+		-1, 0, 1
+	};
+	int sobel_mask_col[9] = {
+		-1, -2, -1,
+		0, 0, 0,
+		1, 2, 1
+	};
+	// compute gradient magnitude
+	for(int r=0; r<height; r++) {
+		for(int c=0; c<width; c++) {
+			// get neighboring values
+			vector<int> neighbor_values; // store the intensity of neighboring pixels
+			for(int nr = r - 1; nr <= r + 1; nr++) {
+				for(int nc = c - 1; nc <= c + 1; nc++) {
+					// check if this neighbor (nr, nc) in range
+					// if not, we use "extending solution"
+					int real_nr = (nr < 0) ? 0 : (nr >= height) ? (height-1) : nr;
+					int real_nc = (nc < 0) ? 0 : (nc >= width) ? (width-1) : nc;
+					neighbor_values.push_back(im[real_nr][real_nc]);
+				}
+			}
+			// convolution
+			double Gr = 0.0;
+			double Gc = 0.0;
+			for(int i=0; i<9; i++) {
+				Gr += (double)(neighbor_values[i] * sobel_mask_row[i]);
+				Gc += (double)(neighbor_values[i] * sobel_mask_col[i]);
+			}
+			double G = sqrt(Gr * Gr + Gc * Gc);
+			if(G > threshold)
+				edge_im[r][c] = 255;
+			else
+				edge_im[r][c] = 0;
+		}
+	}
+	return true;
+}
+
 bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height, int width, double TH, double TL) {
 	
 	// parameters:

@@ -22,4 +22,6 @@ bool low_pass_filter(unsigned char** data, unsigned char** res, int height, int 
 
 double getSNR(unsigned char** im1, unsigned char** im2, int height, int width);
 
+bool doSobelEdgeDetector(unsigned char** im, unsigned char** edge_im, int height, int width, double threshold);
+
 bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height, int width, double TH, double TL);

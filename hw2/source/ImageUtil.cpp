@@ -268,10 +268,57 @@ bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 			}
 			// get gradient from row_gradient and col_gradient
 			gradient_map[r][c] = sqrt(row_gradient * row_gradient + col_gradient * col_gradient);
+			// determine the gradient direction
+			double theta = atan(col_gradient / row_gradient) * 180 / M_PI; // will be -90 ~ 90
+			if(theta >= -90.0 && theta < -67.5)
+				gradient_direction[r][c] = 3; // 90 degrees
+			else if(theta >= -67.5 && theta < -22.5)
+				gradient_direction[r][c] = 4; // 135 degrees
+			else if(theta >= -22.5 && theta < 22.5)
+				gradient_direction[r][c] = 1; // 0 degrees
+			else if(theta >= 22.5 && theta < 67.5)
+				gradient_direction[r][c] = 2; // 45 degrees
+			else if(theta >= 67.5 && theta <= 90)
+				gradient_direction[r][c] = 3; // 90 degrees again
 		}
 	}
 
-	// step #3: 
+	// step #3: Non-maximal Suppression
+	for(int r=0; r<height; r++) {
+		for(int c=0; c<width; c++) {
+			// get the two nearest neighbors along the edge normal
+			double n1_gradient, n2_gradient; // store the gradient magnitude of the 2 neighbors
+			switch(gradient_direction[r][c]) {
+				case 1:
+					// n1: up, n2: down
+					n1_gradient = ((r - 1) < 0) ? 0.0 : gradient_map[r-1][c];
+					n2_gradient = ((r + 1) >= height) ? 0.0 : gradient_map[r+1][c];
+					break;
+				case 2:
+					// n1: up-left, n2: down-right
+					n1_gradient = ((r - 1) < 0) ? 0.0 : ((c - 1) < 0) ? 0.0 : gradient_map[r-1][c-1];
+					n2_gradient = ((r + 1) >= height) ? 0.0 : ((c + 1) >= width) ? 0.0 : gradient_map[r+1][c+1];
+					break;
+				case 3:
+					// n1: left, n2: right
+					n1_gradient = ((c - 1) < 0) ? 0.0 : gradient_map[r][c-1];
+					n2_gradient = ((c + 1) >= width) ? 0.0 : gradient_map[r][c+1];
+					break;
+				case 4:
+					// n1: up-right, n2: down-left
+					n1_gradient = ((r - 1) < 0) ? 0.0 : ((c + 1) >= width) ? 0.0 : gradient_map[r-1][c+1];
+					n2_gradient = ((r + 1) >= height) ? 0.0 : ((c - 1) < 0) ? 0.0 : gradient_map[r+1][c-1];
+					break;
+				default: // shouldn't be here actually
+					n1_gradient = 0.0;
+					n2_gradient = 0.0;
+					break;
+			}
+			if(gradient_map[r][c] <= n1_gradient || gradient_map[r][c] <= n2_gradient)
+				// suppressed
+				gradient_map[r][c] = 0.0;
+		}
+	}
 	return true;
 }
 

@@ -319,6 +319,18 @@ bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 				gradient_map[r][c] = 0.0;
 		}
 	}
+
+	// step #4: Hysteretic Thresholding
+	for(int r=0; r<height; r++) {
+		for(int c=0; c<width; c++) {
+			if(gradient_map[r][c] >= TH)
+				edge_im[r][c] = 255; // edge pixel
+			else if(gradient_map[r][c] >= TL)
+				edge_im[r][c] = 128; // candidate pixel
+			else
+				edge_im[r][c] = 0; // non-edge pixel
+		}
+	}
 	return true;
 }
 

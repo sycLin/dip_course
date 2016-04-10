@@ -231,6 +231,47 @@ bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 			im_nr[r][c] = (result / 159);
 		}
 	}
+
+	// step #2: Compute Gradient Magnitude and Orientation
+	double gradient_map[height][width]; // store the gradient magnitude of every pixel
+	int gradient_direction[height][width]; // one of {1, 2, 3, 4}, which stands for {0, 45, 90, 135} respectively. 
+	for(int r=0; r<height; r++) {
+		for(int c=0; c<width; c++) {
+			// get neighboring values
+			vector<int> neighbor_values; // store the intensity of neighboring pixels
+			for(int nr = r - 1; nr <= r + 1; nr++) {
+				for(int nc = c - 1; nc <= c + 1; nc++) {
+					// check if this neighbor (nr, nc) in range
+					// if not, we use "extending solution"
+					int real_nr = (nr < 0) ? 0 : (nr >= height) ? (height-1) : nr;
+					int real_nc = (nc < 0) ? 0 : (nc >= width) ? (width-1) : nc;
+					neighbor_values.push_back(im[real_nr][real_nc]);
+				}
+			}
+			// convolution with sobel filter (row & col)
+			int sobel_mask_row[9] = {
+				-1, 0, 1,
+				-2, 0, 2,
+				-1, 0, 1
+			};
+			int sobel_mask_col[9] = {
+				-1, -2, -1,
+				0, 0, 0,
+				1, 2, 1
+			};
+			int row_gradient = 0;
+			int col_gradient = 0;
+			for(int i=0; i<9; i++) {
+				result += (neighbor_values[i] * gaussian_mask[i]);
+				row_gradient += (neighbor_values[i] * sobel_mask_row[i]);
+				col_gradient += (neighbor_values[i] * sobel_mask_col[i]);
+			}
+			// get gradient from row_gradient and col_gradient
+			gradient_map[r][c] = sqrt(row_gradient * row_gradient + col_gradient * col_gradient);
+		}
+	}
+
+	// step #3: 
 	return true;
 }
 

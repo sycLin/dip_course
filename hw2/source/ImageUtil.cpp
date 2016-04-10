@@ -204,8 +204,31 @@ bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 	unsigned char im_nr[height][width]; // store the result of noide reduction
 	for(int r=0; r<height; r++) {
 		for(int c=0; c<width; c++) {
+			// get neighboring values
 			vector<int> neighbor_values; // store the intensity of neighboring pixels
-			;
+			for(int nr = r - 2; nr <= r + 2; nr++) {
+				for(int nc = c - 2; nc <= c + 2; nc++) {
+					// check if this neighbor (nr, nc) in range
+					// if not, we use "extending solution"
+					int real_nr = (nr < 0) ? 0 : (nr >= height) ? (height-1) : nr;
+					int real_nc = (nc < 0) ? 0 : (nc >= width) ? (width-1) : nc;
+					neighbor_values.push_back(im[real_nr][real_nc]);
+				}
+			}
+			// convolution
+			int gaussian_mask[25] = {
+				2,  4,  5,  4, 2,
+				4,  9, 12,  9, 4,
+				5, 12, 15, 12, 5,
+				4,  9, 12,  9, 4,
+				2,  4,  5,  4, 2
+			};
+			int result = 0;
+			for(int i=0; i<25; i++) {
+				result += (neighbor_values[i] * gaussian_mask[i]);
+			}
+			// put the result in im_nr[r][c]
+			im_nr[r][c] = (result / 159);
 		}
 	}
 	return true;

@@ -8,6 +8,7 @@
 #include <math.h> // for logarithm / exponential / floor / power
 #include <random> // for random
 #include <time.h> // for time()
+#include <queue>
 
 using namespace std;
 

@@ -331,6 +331,45 @@ bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 				edge_im[r][c] = 0; // non-edge pixel
 		}
 	}
+
+	// step #5: Connected Component Labeling Method
+	// initialize visited[i][j] to false for all i, j
+	bool visited[height][width];
+	for(int i=0; i<height; i++) 
+		for(int j=0; j<width; j++)
+			visited[i][j] = false;
+	// go through the image
+	for(int r=0; r<height; r++) {
+		for(int c=0; c<width; c++) {
+			if(edge_im[r][c] == 255 && !visited[r][c]) {
+				visited[r][c] = true;
+				// diffuse from "not-visited edge pixel"
+				// (using 8-connected, BFS, and a queue)
+				queue< pair<int, int> > pixel_queue; // store the x, y coordinates
+				pixel_queue.push(make_pair(r, c)); // push self
+				while(!queue.empty()) {
+					// pop one out
+					pair<int, int> coord = queue.front();
+					queue.pop();
+					// explore
+					for(int nr = coord.first-1; nr <= coord.first+1; nr++) {
+						for(int nc = coord.second-1; nc <= coord.second+1; nc++) {
+							if(nr >= 0 && nr < height && nc >= 0 && nc < width) {
+								// neighbor (nr, nc) in range
+								if(edge_im[nr][nc] >= 128) {
+									// set as edge
+									edge_im[nr][nc] = 255;
+									visited[nr][nc] = true;
+									// push into queue
+									pixel_queue.push(make_pair(nr, nc));
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 	return true;
 }
 

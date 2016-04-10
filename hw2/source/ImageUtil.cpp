@@ -262,14 +262,13 @@ bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 			int row_gradient = 0;
 			int col_gradient = 0;
 			for(int i=0; i<9; i++) {
-				result += (neighbor_values[i] * gaussian_mask[i]);
 				row_gradient += (neighbor_values[i] * sobel_mask_row[i]);
 				col_gradient += (neighbor_values[i] * sobel_mask_col[i]);
 			}
 			// get gradient from row_gradient and col_gradient
 			gradient_map[r][c] = sqrt(row_gradient * row_gradient + col_gradient * col_gradient);
 			// determine the gradient direction
-			double theta = atan(col_gradient / row_gradient) * 180 / M_PI; // will be -90 ~ 90
+			double theta = atan((double)col_gradient / (double)row_gradient) * 180.0 / M_PI; // will be -90 ~ 90
 			if(theta >= -90.0 && theta < -67.5)
 				gradient_direction[r][c] = 3; // 90 degrees
 			else if(theta >= -67.5 && theta < -22.5)
@@ -331,6 +330,22 @@ bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 				edge_im[r][c] = 0; // non-edge pixel
 		}
 	}
+	int count_edge = 0;
+	int count_candidate = 0;
+	int count_non_edge = 0;
+	for(int r=0; r<height; r++) {
+		for(int c=0; c<width; c++) {
+			if(edge_im[r][c] == 255)
+				count_edge += 1;
+			else if(edge_im[r][c] == 128)
+				count_candidate += 1;
+			else if(edge_im[r][c] == 0)
+				count_non_edge += 1;
+			else
+				cerr << "cannot categorize pixel at: " << r << ", " << c << endl;
+		}
+	}
+	// cerr << "(edge, candidate, non-edge) = (" << count_edge << ", " << count_candidate << ", " << count_non_edge << ")" << endl;
 
 	// step #5: Connected Component Labeling Method
 	// initialize visited[i][j] to false for all i, j
@@ -347,16 +362,16 @@ bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 				// (using 8-connected, BFS, and a queue)
 				queue< pair<int, int> > pixel_queue; // store the x, y coordinates
 				pixel_queue.push(make_pair(r, c)); // push self
-				while(!queue.empty()) {
+				while(!pixel_queue.empty()) {
 					// pop one out
-					pair<int, int> coord = queue.front();
-					queue.pop();
+					pair<int, int> coord = pixel_queue.front();
+					pixel_queue.pop();
 					// explore
 					for(int nr = coord.first-1; nr <= coord.first+1; nr++) {
 						for(int nc = coord.second-1; nc <= coord.second+1; nc++) {
 							if(nr >= 0 && nr < height && nc >= 0 && nc < width) {
 								// neighbor (nr, nc) in range
-								if(edge_im[nr][nc] >= 128) {
+								if(edge_im[nr][nc] >= 128 && !visited[nr][nc]) {
 									// set as edge
 									edge_im[nr][nc] = 255;
 									visited[nr][nc] = true;
@@ -369,6 +384,12 @@ bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 				}
 			}
 		}
+	}
+	// eliminate the rest of the candidate pixels
+	for(int r=0; r<height; r++) {
+		for(int c=0; c<width; c++)
+			if(edge_im[r][c] != 255)
+				edge_im[r][c] = 0;
 	}
 	return true;
 }

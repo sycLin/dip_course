@@ -27,3 +27,7 @@ bool doSobelEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height, int width, double TH, double TL);
 
 bool doDifferenceOfGaussian(unsigned char** im, unsigned char** edge_im, int height, int width, int threshold);
+
+pair<int, int> getOffset(unsigned char** im1, unsigned char** im2, int height, int width);
+
+bool getOffset_compare(const pair<pair<int, int>, double>&i, const pair<pair<int, int>, double>&j);

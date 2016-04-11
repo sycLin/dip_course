@@ -512,3 +512,47 @@ bool doDifferenceOfGaussian(unsigned char** im, unsigned char** edge_im, int hei
 	}
 	return true;
 }
+
+pair<int, int> getOffset(unsigned char** im1, unsigned char** im2, int height, int width) {
+	// try to move im2 to align to im1
+	vector< pair< pair<int, int>, double > > diff_vector; // store the offset and diff value
+	// enumerate all possible translation
+	int debug_counter = 0;
+	for(int off_x = -height+1; off_x < height; off_x++) {
+		for(int off_y = 0; off_y < width; off_y++, debug_counter++) {
+			// im2 with translation (off_x, off_y)
+			// check overlap region area (should be > 200 pixels)
+			int overlap_pixel_count = (int)((height - fabs(off_x)) * (width - fabs(off_y)));
+			if(overlap_pixel_count <= 200)
+				continue;
+			double diff_value = 0.0;
+			// loop over pixels in im1
+			for(int r=0; r<height; r++) {
+				for(int c=0; c<width; c++) {
+					// im1[r][c]
+					// im2[r - off_x][c - off_y]
+					int r2 = r - off_x;
+					int c2 = c - off_y;
+					// check if in range
+					if(r2 >= 0 && r2 < height && c2 >= 0 && c2 < width) {
+						overlap_pixel_count += 1;
+						diff_value += (double)((im1[r][c] - im2[r2][c2]) * (im1[r][c] - im2[r2][c2]));
+					}
+				}
+			}
+			diff_vector.push_back(make_pair(make_pair(off_x, off_y), diff_value/(double)overlap_pixel_count));
+			if(debug_counter % 10000 == 9999)
+				cerr << "\rProcessed " << debug_counter+1 << " offset possibilities!";
+		}
+	}
+	cerr << "\rProcessed " << debug_counter+1 << " offset possibilities!" << endl;
+	// sort the vector with std::sort()
+	sort(diff_vector.begin(), diff_vector.end(), getOffset_compare);
+	return diff_vector[0].first;
+}
+
+bool getOffset_compare(const pair<pair<int, int>, double>&i, const pair<pair<int, int>, double>&j) {
+	// ascending order
+	return i.second < j.second;
+}
+

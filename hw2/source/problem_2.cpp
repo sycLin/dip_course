@@ -141,10 +141,73 @@ int main(int argc, char* argv[]) {
 
 	// ========== warping ========== //
 
-	// 1st part: recrangle => rectangle
-	// 2nd part: rectangle => circle
-	// 3rd part: rectangle => oval
+	// prepare the image
+	unsigned char** im_warped = (unsigned char**)malloc(512 * sizeof(unsigned char**));
+	for(int i=0; i<512; i++) {
+		im_warped[i] = (unsigned char*)malloc(512 * sizeof(unsigned char));
+		for(int j=0; j<512; j++)
+			im_warped[i][j] = 0;
+	}
 
+	// 1st part: recrangle[0..64][0..512] => rectangle[0..64][240..272]
+	// (backward function implemented here)
+	for(int r=0; r<64; r++) {
+		for(int c=240; c < 272; c++) {
+			// (u', v') coordinates w.r.t. center (31.5, 255.5)
+			double u_prime = (double)r - (double)31.5;
+			double v_prime = (double)c - (double)255.5;
+			// warping function
+			//     u' = u          => u = u'
+			//     v' = (1/16) * v => v = 16 * v'
+			double u = u_prime;
+			double v = v_prime * 16.0;
+			// u-v has the exact same center as u'-v'
+			im_warped[r][c] = im_cropped[(int)(31.5 + u)][(int)(255.5 + v)];
+		}
+	}
+	// 2nd part: rectangle => circle
+	// (backward function implemented here)
+	for(int r=64; r<288; r++) {
+		for(int c=0; c<512; c++) {
+			// (u', v') coordinates w.r.t. center (175.5, 255.5)
+			double u_prime = (double)r - (double)175.5;
+			double v_prime = (double)c - (double)255.5;
+			// warping function
+			//     u' = u                                 => u = u'
+			//     v' = (sqrt(h * h - 4 * u * u) / w) * v => v = w / sqrt(h * h - 4 * u' * u') * v'
+			double u = u_prime;
+			double denominator = sqrt(224.0 * 224.0 - 4.0 * u_prime * u_prime);
+			if(denominator == 0.0)
+				continue;
+			double v = 512.0 / denominator * v_prime;
+			// u-v has the exact same center as u'-v'
+			int tmp_r = (int)(175.5 + u);
+			int tmp_c = (int)(255.5 + v);
+			if(tmp_r >= 64 && tmp_r < 288 && tmp_c >= 0 && tmp_c < 512) {
+				im_warped[r][c] = im_cropped[tmp_r][tmp_c];
+			}
+		}
+	}
+	// 3rd part: rectangle => oval
+	// (forward function implemented here)
+	for(int r=288; r<512; r++) {
+		for(int c=0; c<512; c++) {
+			// (u, v) coordinates w.r.t. center(399.5, 255.5)
+			double u = (double)r - (double)399.5;
+			double v = (double)c - (double)255.5;
+			// warping function
+			//     u' = u
+			//     v' = sqrt(1 - (2 * u' / h) * (2 * u' / h)) * v
+			double u_prime = u;
+			double v_prime = sqrt(1.0 - (2.0 * u / 224.0) * (2.0 * u / 224.0)) * v;
+			im_warped[(int)(399.5 + u_prime)][(int)(255.5 + v_prime)] = im_cropped[r][c];
+		}
+	}
+	// write result to file
+	if(!writeImageToFile("p2_G.raw", im_warped, 512, 512)) {
+		cerr << "cannot write image to file (p2_G.raw)... " << endl;
+		exit(-1);
+	}
 
 	return 0;
 }

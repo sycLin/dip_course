@@ -6,7 +6,6 @@
 void print_usage();
 
 int main(int argc, char* argv[]) {
-	cerr << "QAQ ??" << endl;
 	srand(time(NULL));
 
 	// check arguments
@@ -23,6 +22,13 @@ int main(int argc, char* argv[]) {
 		im[i] = (unsigned char*)malloc(512 * sizeof(unsigned char));
 		for(int j=0; j<512; j++)
 			im[i][j] = 0;
+	}
+
+	// ========== Read Image Specified in Argument ========== //
+	// bool openImageAsMatrix(char* path, unsigned char** ptr, int height, int width);
+	if(!openImageAsMatrix(argv[1], im, 512, 512)) {
+		cerr << "cannot open image at: " << argv[1] << endl;
+		exit(-1);
 	}
 
 	// ========== Apply Impulse Response Arrays ========== //
@@ -108,7 +114,7 @@ int main(int argc, char* argv[]) {
 
 	// calculate feature vector with a moving window
 	// the window size here is set to 35 x 35
-	int window_size = 35;
+	int window_size = 13;
 	double T[9][512][512];
 	double feature_vec_max[9]; // to store maximum in each dimension
 	for(int i=0; i<9; i++)
@@ -125,8 +131,7 @@ int main(int argc, char* argv[]) {
 						int real_nr = (nr < 0) ? 0 : (nr >= 512) ? 511 : nr;
 						int real_nc = (nc < 0) ? 0 : (nc >= 512) ? 511 : nc;
 						double tmp = (double)(im[real_nr][real_nc] - M[i][real_nr][real_nc]);
-						// cerr << "tmp = " << tmp << endl;
-						// result += tmp * tmp;
+						result += tmp * tmp;
 					}
 				}
 				// standard deviation
@@ -139,90 +144,109 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	// // ========== Apply K-means Algorithm ========== //
-	// cerr << "// ========== Apply K-means Algorithm ========== //" << endl;
-	// // int K = 4; // domain knowledge
-	// double centroid[4][9];
-	// unsigned char** classified = (unsigned char**)malloc(512 * sizeof(unsigned char*));
-	// for(int i=0; i<512; i++)
-	// 	classified[i] = (unsigned char*)malloc(512 * sizeof(unsigned char));
-	// // randomly assign all the centroids first
-	// for(int i=0; i<4; i++) {
-	// 	for(int j=0; j<9; j++) {
-	// 		centroid[i][j] = (double)(rand() % (int)feature_vec_max[j]);
-	// 	}
-	// }
-	// int iteration_count = 0;
-	// // debug: run 10 times
-	// while(iteration_count < 10) {
-	// 	// tmp_centroid for pre-calculating the next centroids
-	// 	double tmp_centroid[4][9];
-	// 	for(int i=0; i<4; i++) {
-	// 		for(int j=0; j<9; j++)
-	// 			tmp_centroid[i][j] = 0.0;
-	// 	}
-	// 	int cluster_counter[4] = {0, 0, 0, 0}; // to store how many pixels in a cluster
-	// 	// classify each pixel
-	// 	for(int r=0; r<512; r++) {
-	// 		for(int c=0; c<512; c++) {
-	// 			// calculate the distance
-	// 			double dist[4];
-	// 			for(int i=0; i<4; i++) {
-	// 				// dist[i]: the distance from T[][r][c] to centroid[i][]
-	// 				dist[i] = 0.0;
-	// 				for(int j=0; j<9; j++) {
-	// 					dist[i] += (T[j][r][c] - centroid[i][j]) * (T[j][r][c] - centroid[i][j]);
-	// 				}
-	// 			}
-	// 			// determine the cluster 
-	// 			// also pre-calculate the next centroid
-	// 			if(dist[0] <= dist[1] && dist[0] <= dist[2] && dist[0] <= dist[3]) {
-	// 				// cluster 0
-	// 				// mark cluster
-	// 				classified[r][c] = 255 * 0 / 3;
-	// 				// update next centroid calculation
-	// 				for(int i=0; i<9; i++)
-	// 					tmp_centroid[0][i] += T[i][r][c];
-	// 				cluster_counter[0] += 1;
-	// 			} else if(dist[1] <= dist[0] && dist[1] <= dist[2] && dist[1] <= dist[3]) {
-	// 				// cluster 1
-	// 				// mark cluster
-	// 				classified[r][c] = 255 * 1 / 3;
-	// 				// update next centroid calculation
-	// 				for(int i=0; i<9; i++)
-	// 					tmp_centroid[1][i] += T[i][r][c];
-	// 				cluster_counter[1] += 1;
-	// 			} else if(dist[2] <= dist[0] && dist[2] <= dist[1] && dist[2] <= dist[3]) {
-	// 				// cluster 2
-	// 				// mark cluster
-	// 				classified[r][c] = 255 * 2 / 3;
-	// 				// update next centroid calculation
-	// 				for(int i=0; i<9; i++)
-	// 					tmp_centroid[2][i] += T[i][r][c];
-	// 				cluster_counter[2] += 1;
-	// 			} else {
-	// 				// cluster 3
-	// 				// mark cluster
-	// 				classified[r][c] = 255 * 3 / 3;
-	// 				// update next centroid calculation
-	// 				for(int i=0; i<9; i++)
-	// 					tmp_centroid[3][i] += T[i][r][c];
-	// 				cluster_counter[3] += 1;
-	// 			}
-	// 		}
-	// 	}
-	// 	// update centroid
-	// 	for(int i=0; i<4; i++)
-	// 		for(int j=0; j<9; j++)
-	// 			centroid[i][j] = tmp_centroid[i][j] / (double)cluster_counter[i];
-	// 	iteration_count += 1;
-	// }
+	// ========== Apply K-means Algorithm ========== //
+	cerr << "// ========== Apply K-means Algorithm ========== //" << endl;
+	// int K = 4; // domain knowledge
+	double centroid[4][9];
+	unsigned char** classified = (unsigned char**)malloc(512 * sizeof(unsigned char*));
+	for(int i=0; i<512; i++) {
+		classified[i] = (unsigned char*)malloc(512 * sizeof(unsigned char));
+		for(int j=0; j<512; j++)
+			classified[i][j] = 0;
+	}
+	// randomly assign all the centroids first
+	for(int i=0; i<4; i++) {
+		cerr << "centroid[" << i << "]: ";
+		for(int j=0; j<9; j++) {
+			centroid[i][j] = (double)(rand() % (int)feature_vec_max[j]);
+			cerr << centroid[i][j] << " ";
+		}
+		cerr << endl;
+	}
+	int iteration_count = 0;
+	// debug: run 10 times
+	while(iteration_count < 3000) {
+		// tmp_centroid for pre-calculating the next centroids
+		double tmp_centroid[4][9];
+		for(int i=0; i<4; i++) {
+			for(int j=0; j<9; j++)
+				tmp_centroid[i][j] = 0.0;
+		}
+		int cluster_counter[4] = {0, 0, 0, 0}; // to store how many pixels in a cluster
+		// classify each pixel
+		for(int r=0; r<512; r++) {
+			for(int c=0; c<512; c++) {
+				// calculate the distance
+				double dist[4];
+				for(int i=0; i<4; i++) {
+					// dist[i]: the distance from T[][r][c] to centroid[i][]
+					dist[i] = 0.0;
+					for(int j=0; j<9; j++) {
+						dist[i] += (T[j][r][c] - centroid[i][j]) * (T[j][r][c] - centroid[i][j]);
+					}
+				}
+				// determine the cluster 
+				// also pre-calculate the next centroid
+				if(dist[0] <= dist[1] && dist[0] <= dist[2] && dist[0] <= dist[3]) {
+					// cluster 0
+					// mark cluster
+					classified[r][c] = 255 * 0 / 3;
+					// update next centroid calculation
+					for(int i=0; i<9; i++)
+						tmp_centroid[0][i] += T[i][r][c];
+					cluster_counter[0] += 1;
+				} else if(dist[1] <= dist[0] && dist[1] <= dist[2] && dist[1] <= dist[3]) {
+					// cluster 1
+					// mark cluster
+					classified[r][c] = 255 * 1 / 3;
+					// update next centroid calculation
+					for(int i=0; i<9; i++)
+						tmp_centroid[1][i] += T[i][r][c];
+					cluster_counter[1] += 1;
+				} else if(dist[2] <= dist[0] && dist[2] <= dist[1] && dist[2] <= dist[3]) {
+					// cluster 2
+					// mark cluster
+					classified[r][c] = 255 * 2 / 3;
+					// update next centroid calculation
+					for(int i=0; i<9; i++)
+						tmp_centroid[2][i] += T[i][r][c];
+					cluster_counter[2] += 1;
+				} else {
+					// cluster 3
+					// mark cluster
+					classified[r][c] = 255 * 3 / 3;
+					// update next centroid calculation
+					for(int i=0; i<9; i++)
+						tmp_centroid[3][i] += T[i][r][c];
+					cluster_counter[3] += 1;
+				}
+			}
+		}
+		// update centroid
+		for(int i=0; i<4; i++) {
+			for(int j=0; j<9; j++) {
+				if(cluster_counter[i] == 0)
+					centroid[i][j] = (double)(rand() % (int)feature_vec_max[j]);
+				else
+					centroid[i][j] = tmp_centroid[i][j] / (double)cluster_counter[i];
+			}
+		}
+		// debug
+		// for(int i=0; i<4; i++) {
+		// 	cerr << "cluster " << i << " has " << cluster_counter[i] << " pixels." << endl;
+		// }
+		if(iteration_count % 100 == 99) {
+			cerr << "\rAlready " << iteration_count+1 << " iterations.";
+		}
+		iteration_count += 1;
+	}
+	cerr << "\rAlready " << iteration_count+1 << " iterations." << endl;
 
-	// // debug write to image
-	// if(!writeImageToFile("p3_L.raw", classified, 512, 512)) {
-	// 	cerr << "cannot write image to file! (p3_L.raw)" << endl;
-	// 	exit(-1);
-	// }
+	// debug write to image
+	if(!writeImageToFile("p3_L.raw", classified, 512, 512)) {
+		cerr << "cannot write image to file! (p3_L.raw)" << endl;
+		exit(-1);
+	}
 
 	return 0;
 }

@@ -248,6 +248,63 @@ int main(int argc, char* argv[]) {
 		exit(-1);
 	}
 
+	
+	// ========== Attach Texture to Animals ========== //
+	cerr << "// ========== Attach Texture to Animals ========== //" << endl;
+
+	// initialize the textured image
+	unsigned char** textured_im = (unsigned char**)malloc(512 * sizeof(unsigned char*));
+	for(int i=0; i<512; i++) {
+		textured_im[i] = (unsigned char*)malloc(512 * sizeof(unsigned char));
+		for(int j=0; j<512; j++) {
+			textured_im[i][j] = 0;
+		}
+	}
+	// get the textures (heuristic)
+	// [0]: zebra
+	// [1]: jaguar
+	// [2]: giraffe
+	int texture_start[3][2] = {
+		{350, 225},
+		{195, 435},
+		{10, 225}
+	};
+	int texture_size[3][2] = {
+		{70, 50},
+		{105, 65},
+		{75, 50}
+	};
+	// fill in
+	int zebra_where;
+	int jaguar_where;
+	int giraffe_where;
+	cout << "Where is zebra? [0] black [1] dark-gray [2] light-gray [3] white. > ";
+	cin >> zebra_where;
+	cout << "Where is jaguar? [0] black [1] dark-gray [2] light-gray [3] white. > ";
+	cin >> jaguar_where;
+	cout << "Where is giraffe? [0] black [1] dark-gray [2] light-gray [3] white. > ";
+	cin >> giraffe_where;
+	for(int r=0; r<512; r++) {
+		for(int c=0; c<512; c++) {
+			if(classified[r][c] == zebra_where * 255 / 3) {
+				textured_im[r][c] = im[texture_start[0][0] + r % texture_size[0][0]][texture_start[0][1] + c % texture_size[0][1]];
+			} else if(classified[r][c] == jaguar_where * 255 / 3) {
+				textured_im[r][c] = im[texture_start[1][0] + r % texture_size[1][0]][texture_start[1][1] + c % texture_size[1][1]];
+			} else if(classified[r][c] == giraffe_where * 255 / 3) {
+				textured_im[r][c] = im[texture_start[2][0] + r % texture_size[2][0]][texture_start[2][1] + c % texture_size[2][1]];
+			} else {
+				// background
+			}
+		}
+	}
+	// write image to file
+	if(!writeImageToFile("p3_C.raw", textured_im, 512, 512)) {
+		cerr << "cannot write image to file! (p3_C.raw)" << endl;
+		exit(-1);
+	}
+
+
+
 	return 0;
 }
 

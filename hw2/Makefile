@@ -18,7 +18,7 @@ run2:
 run3:
 	./problem_3 raw/sample8.raw
 	if ! [ -d "results" ]; then mkdir results; fi
-	mv p3_L.raw results/
+	mv p3_L.raw p3_C.raw results/
 
 clean:
 	rm -rf problem_1 problem_2 problem_3

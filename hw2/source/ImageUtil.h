@@ -25,3 +25,5 @@ double getSNR(unsigned char** im1, unsigned char** im2, int height, int width);
 bool doSobelEdgeDetector(unsigned char** im, unsigned char** edge_im, int height, int width, double threshold);
 
 bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height, int width, double TH, double TL);
+
+bool doDifferenceOfGaussian(unsigned char** im, unsigned char** edge_im, int height, int width, int threshold);

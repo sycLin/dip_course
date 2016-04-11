@@ -437,3 +437,78 @@ bool doCannyEdgeDetector(unsigned char** im, unsigned char** edge_im, int height
 	return true;
 }
 
+bool doDifferenceOfGaussian(unsigned char** im, unsigned char** edge_im, int height, int width, int threshold) {
+	// prepare the DOG kernel
+	int DOG_MASK[121] = {
+		-1, -3, -4, -6, -7, -8, -7, -6, -4, -3, -1,
+		-3, -5, -8, -11, -13, -13, -13, -11, -8, -5, -3,
+		-4, -8, -12, -16, -17, -17, -17, -16, -12, -8, -4,
+		-6, -11, -16, -16, 0, 15, 0, -16, -16, -11, -6,
+		-7, -13, -17, 0, 85, 160, 85, 0, -17, -13, -7,
+		-8, -13, -17, 15, 160, 283, 160, 15, -17, -13, -8,
+		-7, -13, -17, 0, 85, 160, 85, 0, -17, -13, -7,
+		-6, -11, -16, -16, 0, 15, 0, -16, -16, -11, -6,
+		-4, -8, -12, -16, -17, -17, -17, -16, -12, -8, -4,
+		-3, -5, -8, -11, -13, -13, -13, -11, -8, -5, -3,
+		-1, -3, -4, -6, -7, -8, -7, -6, -4, -3, -1
+	};
+	// convolve with DOG mask, and generate thresholded map
+	int thresholded_map[height][width];
+	for(int r=0; r<height; r++) {
+		for(int c=0; c<width; c++) {
+			// get neighbor values
+			vector<int> neighbor_values;
+			for(int nr = r - 5; nr <= r + 5; nr++) {
+				for(int nc = c - 5; nc <= c + 5; nc++) {
+					// check if this neighbor (nr, nc) in range
+					// if not, we use "extending solution"
+					int real_nr = (nr < 0) ? 0 : (nr >= height) ? (height-1) : nr;
+					int real_nc = (nc < 0) ? 0 : (nc >= width) ? (width-1) : nc;
+					neighbor_values.push_back(im[real_nr][real_nc]);
+				}
+			}
+			// convolve
+			int tmp = 0;
+			for(int i=0; i<121; i++) {
+				tmp += (neighbor_values[i] * DOG_MASK[i]);
+				if(tmp > threshold)
+					thresholded_map[r][c] = 1;
+				else if(tmp < -threshold)
+					thresholded_map[r][c] = -1;
+				else
+					thresholded_map[r][c] = 0;
+			}
+		}
+	}
+	// determine zero-crossing with thresholded map
+	for(int r=0; r<height; r++) {
+		for(int c=0; c<width; c++) {
+			if(thresholded_map[r][c] == 1) {
+				// check if any of the neighbors is -1
+				bool check = false;
+				for(int nr = r - 1; nr <= r + 1; nr++) {
+					for(int nc = c - 1; nc <= c + 1; nc++) {
+						// if in range && is -1
+						if(nr >= 0 && nr < height && nc >= 0 && nc < width && thresholded_map[nr][nc] == -1)
+							check = true;
+					}
+				}
+				edge_im[r][c] = (check) ? 255 : 0;
+			} else if(thresholded_map[r][c] == -1) {
+				// check if any of the neighbors is 1
+				bool check = false;
+				for(int nr = r - 1; nr <= r + 1; nr++) {
+					for(int nc = c - 1; nc <= c + 1; nc++) {
+						// if in range && is 1
+						if(nr >= 0 && nr < height && nc >= 0 && nc < width && thresholded_map[nr][nc] == 1)
+							check = true;
+					}
+				}
+				edge_im[r][c] = (check) ? 255 : 0;
+			} else {
+				edge_im[r][c] = 0;
+			}
+		}
+	}
+	return true;
+}

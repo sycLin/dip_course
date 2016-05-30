@@ -1,7 +1,0 @@
-truth                       => Y 9 4 P 9 V 3 7 T 3 H C T 3 B C P V T H 5 B
-2 ratios + rr25 + normalize => Y c e P B v 3 Z T 3 H 0 T 3 B 0 P v T L S 2
-without normalize           => Y S i P B v 3 Z T 3 V C T 3 B C P v l h $ 2
-with 10.0 x rr25            => Y S i P B v 3 Z T 3 V C T 3 B C P v l h $ 2
-getSimilarity2()            => Y s e P B v 3 Z T 3 H 0 T 3 B 0 P v T L $ 8
-3x3 = 9 regions             => Y B i P R y R 7 T 3 H c T R B C P v T H 5 $ => 15
-3x3 wih getSimilarity()     => Y R A P 5 y R 7 T 3 5 C T 5 R C P V T b 5 5

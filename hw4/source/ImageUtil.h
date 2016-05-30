@@ -18,5 +18,12 @@ bool writeImageToFile(char* path, unsigned char** data, int height, int width);
 
 void binarize(unsigned char** data, double threshold);
 
-unsigned char** dilation(unsigned char** data, int height, int width, int foreground);
+unsigned char** dilation(unsigned char** data, int height, int width, int foreground, int mask_size);
 
+unsigned char** erosion(unsigned char** data, int height, int width, int foreground, int mask_size);
+
+unsigned char** extractBoundary(unsigned char** data, int height, int width, int foreground);
+
+unsigned char** imageUnion(unsigned char** data1, unsigned char** data2, int height, int width, int foreground);
+
+unsigned char** imageDifference(unsigned char** data1, unsigned char** data2, int height, int width, int foreground);

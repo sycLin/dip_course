@@ -114,8 +114,8 @@ int main(int argc, char* argv[]) {
 
 	// ========== closing Sample1 & TrainingSet (dilation-then-erosion) ========== //
 
-	sample = dilation(sample, 256, 256, 0);
-	train = dilation(train, 248, 450, 0);
+	sample = dilation(sample, 256, 256, 0, 3);
+	train = dilation(train, 248, 450, 0, 3);
 
 
 	// ========== Sample1 & TrainingSet: get the connected componenets ========== //
@@ -164,14 +164,14 @@ int main(int argc, char* argv[]) {
 
 	// ========== write to debug ========== //
 
-	if(!writeImageToFile("new_sample.raw", sample, 256, 256)) {
-		sprintf(errmsg, "cannot write image to file (%s).", "new_sample.raw");
-		ErrorExit();
-	}
-	if(!writeImageToFile("new_train.raw", train, 248, 450)) {
-		sprintf(errmsg, "cannot write image to file (%s).", "new_train.raw");
-		ErrorExit();
-	}
+	// if(!writeImageToFile("new_sample.raw", sample, 256, 256)) {
+	// 	sprintf(errmsg, "cannot write image to file (%s).", "new_sample.raw");
+	// 	ErrorExit();
+	// }
+	// if(!writeImageToFile("new_train.raw", train, 248, 450)) {
+	// 	sprintf(errmsg, "cannot write image to file (%s).", "new_train.raw");
+	// 	ErrorExit();
+	// }
 	// exit(0);
 
 
